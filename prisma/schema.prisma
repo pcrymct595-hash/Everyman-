@@ -1,0 +1,92 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String         @id @default(cuid())
+  email          String         @unique
+  name           String?
+  passwordHash   String
+  avatarUrl      String?
+  createdAt      DateTime       @default(now())
+  clubs          ClubMember[]
+  posts          Post[]
+  sentInvites    Invite[]       @relation("InviteSender")
+  receivedInvites Invite[]      @relation("InviteRecipient")
+  watchPartyMessages WatchPartyMessage[]
+}
+
+model Club {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  isPublic    Boolean      @default(true)
+  imageUrl    String?
+  createdAt   DateTime     @default(now())
+  members     ClubMember[]
+  posts       Post[]
+  invites     Invite[]
+  watchParties WatchParty[]
+}
+
+model ClubMember {
+  id        String   @id @default(cuid())
+  role      String   @default("MEMBER")
+  joinedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  club      Club     @relation(fields: [clubId], references: [id])
+  clubId    String
+
+  @@unique([userId, clubId])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  club      Club     @relation(fields: [clubId], references: [id])
+  clubId    String
+}
+
+model Invite {
+  id          String   @id @default(cuid())
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  sender      User     @relation("InviteSender", fields: [senderId], references: [id])
+  senderId    String
+  recipient   User     @relation("InviteRecipient", fields: [recipientId], references: [id])
+  recipientId String
+  club        Club     @relation(fields: [clubId], references: [id])
+  clubId      String
+}
+
+model WatchParty {
+  id          String             @id @default(cuid())
+  title       String
+  type        String
+  url         String?
+  scheduledAt DateTime?
+  createdAt   DateTime           @default(now())
+  club        Club               @relation(fields: [clubId], references: [id])
+  clubId      String
+  messages    WatchPartyMessage[]
+}
+
+model WatchPartyMessage {
+  id           String     @id @default(cuid())
+  content      String
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+  watchParty   WatchParty @relation(fields: [watchPartyId], references: [id])
+  watchPartyId String
+}
