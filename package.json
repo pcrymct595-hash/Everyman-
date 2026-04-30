@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",
-    "@libsql/client": "^0.14.0",
-    "@prisma/adapter-libsql": "^6.9.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^6.9.0",
     "bcryptjs": "^2.4.3",
     "next": "15.3.1",
