@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import WatchPartyChat from "./WatchPartyChat";
+import RsvpButton from "./RsvpButton";
 
 function getYouTubeId(url: string) {
   const match = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
@@ -14,10 +15,17 @@ export default async function WatchPartyPage({ params }: { params: Promise<{ id:
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/login");
 
-  const wp = await prisma.watchParty.findUnique({ where: { id: wpId } });
+  const wp = await prisma.watchParty.findUnique({
+    where: { id: wpId },
+    include: {
+      rsvps: { where: { userId: session.user.id }, select: { status: true } },
+      _count: { select: { rsvps: { where: { status: "GOING" } } } },
+    },
+  });
   if (!wp) return <div className="p-8 text-gray-400">Watch party not found</div>;
 
   const ytId = wp.url ? getYouTubeId(wp.url) : null;
+  const myStatus = (wp.rsvps[0]?.status ?? null) as "GOING" | "MAYBE" | "NOT_GOING" | null;
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -64,6 +72,11 @@ export default async function WatchPartyPage({ params }: { params: Promise<{ id:
         </div>
 
         <div className="flex flex-col h-[70vh]">
+          <RsvpButton
+            watchPartyId={wpId}
+            initialStatus={myStatus}
+            goingCount={wp._count.rsvps}
+          />
           <h2 className="text-lg font-semibold text-gray-200 mb-3">Live Chat</h2>
           <WatchPartyChat watchPartyId={wpId} currentUserId={session.user.id} />
         </div>
